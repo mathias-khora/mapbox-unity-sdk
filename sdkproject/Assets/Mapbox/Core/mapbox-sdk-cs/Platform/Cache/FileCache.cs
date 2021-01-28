@@ -9,6 +9,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using CustomImageLayerSample;
+using Mapbox.Unity.MeshGeneration.Data;
 using Mapbox.Unity.Utilities;
 using Mapbox.Utils;
 using UnityEngine;
@@ -23,6 +24,7 @@ namespace Mapbox.Platform.Cache
 		event Action<CanonicalTileId, string, TextureCacheItem> FileSaved;
 		void Add(CanonicalTileId tileId, string tilesetId, TextureCacheItem textureCacheItem, bool forceInsert);
 		void GetAsync(CanonicalTileId tileId, string tilesetId, Action<TextureCacheItem> callback);
+		void TileDisposed(UnityTile tile, string tilesetId);
 		bool Exists(CanonicalTileId tileId, string mapId);
 		void Clear(string tilesetId);
 		void ClearAll();
@@ -107,6 +109,11 @@ namespace Mapbox.Platform.Cache
 				Debug.Log("Requested file not found");
 				callback(null);
 			}
+		}
+
+		public void TileDisposed(UnityTile tile, string tilesetId)
+		{
+			_fileDataFetcher.CancelFetching(tile.UnwrappedTileId, tilesetId);
 		}
 
 		public virtual void ClearAll()

@@ -10,7 +10,7 @@ using UnityEngine;
 
 public class VectorDataFetcher : DataFetcher
 {
-	public Action<UnityTile, Mapbox.VectorTile.VectorTile> DataRecieved = (t, s) => { };
+	public Action<UnityTile, VectorTile> DataRecieved = (t, s) => { };
 	public Action<UnityTile, VectorTile, TileErrorEventArgs> FetchingError = (t, r, s) => { };
 
 	public override void FetchData(DataFetcherParameters parameters)
@@ -31,45 +31,45 @@ public class VectorDataFetcher : DataFetcher
 		var dataItem = MapboxAccess.Instance.CacheManager.GetVectorItemFromMemory(tilesetId, tileId);
 		if (dataItem != null)
 		{
-			if (dataItem.VectorTile != null)
+			if (dataItem.VectorTile.VectorResults != null)
 			{
 				DataRecieved(unityTile, dataItem.VectorTile);
 				return;
 			}
-			else if (dataItem.Data != null)
-			{
-				Debug.Log("Memory cached vector item has raw data but not decompressed data, this shouldn't ever happen.");
-				var decompressed = Compression.Decompress(dataItem.Data);
-				var vectorTile = new Mapbox.VectorTile.VectorTile(decompressed);
-				DataRecieved(unityTile, vectorTile);
-				return;
-			}
+			// else if (dataItem.Data != null)
+			// {
+			// 	Debug.Log("Memory cached vector item has raw data but not decompressed data, this shouldn't ever happen.");
+			// 	var decompressed = Compression.Decompress(dataItem.Data);
+			// 	var vectorTile = new Mapbox.VectorTile.VectorTile(decompressed);
+			// 	DataRecieved(unityTile, vectorTile);
+			// 	return;
+			// }
 		}
 
-		if (MapboxAccess.Instance.CacheManager.TileExistsInSqlite(tilesetId, tileId)) //not in memory, check sqlite cache
-		{
-			MapboxAccess.Instance.CacheManager.GetVectorItemFromSqlite(tilesetId, tileId, (cachedDataItem) =>
-			{
-				//sqlite stores raw binary data for now so we have to decompress it
-				//two things should be done here;
-				//(1) store serialized vector tile so we won't need to decompress again
-				//(2) decompress async
-				//so two lines below should cause a big big perf hit at the moment
-
-				var decompressed = Compression.Decompress(cachedDataItem.Data);
-				var vectorTile = new Mapbox.VectorTile.VectorTile(decompressed);
-				DataRecieved(unityTile, vectorTile);
-
-				//after returning what we already have
-				//check if it's out of date, if so check server for update
-				if (cachedDataItem.ExpirationDate < DateTime.Now)
-				{
-					CreateWebRequest(tilesetId, tileId, useOptimizedStyle, optimizedStyle, cachedDataItem.ETag, unityTile);
-				}
-			});
-
-			return;
-		}
+		// if (MapboxAccess.Instance.CacheManager.TileExistsInSqlite(tilesetId, tileId)) //not in memory, check sqlite cache
+		// {
+		// 	MapboxAccess.Instance.CacheManager.GetVectorItemFromSqlite(tilesetId, tileId, (cachedDataItem) =>
+		// 	{
+		// 		//sqlite stores raw binary data for now so we have to decompress it
+		// 		//two things should be done here;
+		// 		//(1) store serialized vector tile so we won't need to decompress again
+		// 		//(2) decompress async
+		// 		//so two lines below should cause a big big perf hit at the moment
+		//
+		// 		var decompressed = Compression.Decompress(cachedDataItem.Data);
+		// 		var vectorTile = new Mapbox.VectorTile.VectorTile(decompressed);
+		// 		DataRecieved(unityTile, vectorTile);
+		//
+		// 		//after returning what we already have
+		// 		//check if it's out of date, if so check server for update
+		// 		if (cachedDataItem.ExpirationDate < DateTime.Now)
+		// 		{
+		// 			CreateWebRequest(tilesetId, tileId, useOptimizedStyle, optimizedStyle, cachedDataItem.ETag, unityTile);
+		// 		}
+		// 	});
+		//
+		// 	return;
+		// }
 
 		//not in cache so web request
 		CreateWebRequest(tilesetId, tileId, useOptimizedStyle, optimizedStyle,String.Empty, unityTile);
@@ -153,14 +153,14 @@ public class VectorDataFetcher : DataFetcher
 					TilesetId = vectorTile.TilesetId,
 					ETag = vectorTile.ETag,
 					Data = vectorTile.ByteData,
-					VectorTile = vectorTile.Data,
+					VectorTile = vectorTile,
 					ExpirationDate = vectorTile.ExpirationDate
 				},
 				true);
 
 			if (vectorTile.StatusCode != 304) //NOT MODIFIED
 			{
-				DataRecieved(unityTile, vectorTile.Data);
+				DataRecieved(unityTile, vectorTile);
 			}
 		}
 

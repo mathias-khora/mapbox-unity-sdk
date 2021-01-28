@@ -10,11 +10,14 @@ using UnityEngine;
 
 public abstract class DataFetcher
 {
-	protected IFileSource _fileSource;
+	public int QueuedRequestCount => _localQueuedRequests.Count;
 
+	private Dictionary<int, Tile> _localQueuedRequests = new Dictionary<int, Tile>();
+
+	protected IFileSource _fileSource;
 	protected static Queue<int> _tileOrder;
 	protected static Dictionary<int, FetchInfo> _tileFetchInfos;
-	protected static Dictionary<int, Tile> _activeRequests;
+	protected static Dictionary<int, Tile> _globalActiveRequests;
 	protected static int _activeRequestLimit = 10;
 
 	protected DataFetcher(IFileSource fileSource)
@@ -24,7 +27,7 @@ public abstract class DataFetcher
 		{
 			_tileOrder = new Queue<int>();
 			_tileFetchInfos = new Dictionary<int, FetchInfo>();
-			_activeRequests = new Dictionary<int, Tile>();
+			_globalActiveRequests = new Dictionary<int, Tile>();
 			Runnable.Run(UpdateTick(_fileSource));
 		}
 	}
@@ -36,7 +39,7 @@ public abstract class DataFetcher
 		{
 			_tileOrder = new Queue<int>();
 			_tileFetchInfos = new Dictionary<int, FetchInfo>();
-			_activeRequests = new Dictionary<int, Tile>();
+			_globalActiveRequests = new Dictionary<int, Tile>();
 			Runnable.Run(UpdateTick(_fileSource));
 		}
 	}
@@ -45,23 +48,19 @@ public abstract class DataFetcher
 	{
 		while (true)
 		{
-			while (_tileOrder.Count > 0 && _activeRequests.Count < _activeRequestLimit)
+			while (_tileOrder.Count > 0 && _globalActiveRequests.Count < _activeRequestLimit)
 			{
 				var tileKey = _tileOrder.Dequeue();
 				if (_tileFetchInfos.ContainsKey(tileKey))
 				{
 					var fi = _tileFetchInfos[tileKey];
 					_tileFetchInfos.Remove(tileKey);
-					_activeRequests.Add(tileKey, fi.RasterTile);
+					_globalActiveRequests.Add(tileKey, fi.RasterTile);
 					fi.RasterTile.Initialize(
 						fileSource,
 						fi.TileId,
 						fi.TilesetId,
-						() =>
-						{
-							_activeRequests.Remove(tileKey);
-							fi.Callback();
-						});
+						fi.Callback);
 					yield return null;
 				}
 			}
@@ -78,10 +77,25 @@ public abstract class DataFetcher
 	protected void EnqueueForFetching(FetchInfo info)
 	{
 		var key = info.TileId.GenerateKey(info.TilesetId);
-		if (!_tileFetchInfos.ContainsKey(key))
+		if (!_localQueuedRequests.ContainsKey(key))
 		{
+			info.Callback += () =>
+			{
+				_globalActiveRequests.Remove(key);
+				_localQueuedRequests.Remove(key);
+			};
+
 			_tileOrder.Enqueue(key);
+			_localQueuedRequests.Add(key, info.RasterTile);
 			_tileFetchInfos.Add(key, info);
+		}
+		else
+		{
+			//same requests is already in queue.
+			//this probably means first one was supposed to be cancelled but for some reason has not.
+			//ensure all data fetchers (including unorthodox ones like file data fetcher) handling
+			//tile cancelling properly
+			Debug.Log("tile request is already in queue. This most likely means first request was supposed to be cancelled but not.");
 		}
 	}
 
@@ -94,12 +108,14 @@ public abstract class DataFetcher
 			_tileFetchInfos.Remove(key);
 		}
 
-		if (_activeRequests.ContainsKey(key))
+		if (_globalActiveRequests.ContainsKey(key))
 		{
-			_activeRequests[key].Cancel();
-			_activeRequests.Remove(key);
+			_globalActiveRequests[key].Cancel();
+			_globalActiveRequests.Remove(key);
 		}
+		_localQueuedRequests.Remove(key);
 	}
+
 }
 
 public class DataFetcherParameters

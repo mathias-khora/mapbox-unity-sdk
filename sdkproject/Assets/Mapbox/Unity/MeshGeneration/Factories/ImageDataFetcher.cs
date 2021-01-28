@@ -1,6 +1,7 @@
 ﻿using Mapbox.Map;
 using Mapbox.Unity.MeshGeneration.Data;
 using System;
+using System.Collections.Generic;
 using Mapbox.Platform;
 using Mapbox.Platform.Cache;
 using Mapbox.Unity;

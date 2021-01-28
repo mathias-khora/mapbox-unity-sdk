@@ -31,7 +31,7 @@ namespace Mapbox.Platform.Cache
 						TilesetId = tilesetId,
 						Texture2D = tile.Texture2D,
 						FilePath = tile.FilePath,
-						HasError = tile.CurrentState == Tile.State.Canceled
+						HasError = tile.CurrentTileState == TileState.Canceled
 					};
 
 					callback(textureCacheItem);
