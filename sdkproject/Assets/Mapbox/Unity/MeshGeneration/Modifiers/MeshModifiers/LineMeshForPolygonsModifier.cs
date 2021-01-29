@@ -20,6 +20,7 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 		private readonly float _sharpCornerOffset = 15f;
 		private float _scaledWidth;
 		private float _tileSize;
+		private float _tileScaler;
 		private List<Vector3> _vertexList;
 		private List<Vector3> _normalList;
 		private List<int> _triangleList;
@@ -37,6 +38,11 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 		private Vector3 _prevNormal;
 		private Vector3 _nextNormal;
 		private float _distance = 0f;
+
+		public LineMeshCore(float tileScaler)
+		{
+			_tileScaler = tileScaler;
+		}
 
 		public ModifierType Type
 		{
@@ -80,8 +86,8 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 				var tolerance = 0.001f;
 				for (int i = 0; i < segment.Count - 1; i++)
 				{
-					var p1 = segment[i];
-					var p2 = segment[i + 1];
+					var p1 = segment[i] * _tileScaler;
+					var p2 = segment[i + 1] * _tileScaler;
 					if (!IsOnEdge(p1, p2, _tileSize, tolerance))
 					{
 						filteredRoadSegment.Add(p1);
@@ -372,8 +378,6 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 				md.UV[0].AddRange(_uvList);
 			}
 		}
-
-
 
 		private static bool IsOnEdge(Vector3 p1, Vector3 p2, float _tileSize, float tolerance)
 		{
