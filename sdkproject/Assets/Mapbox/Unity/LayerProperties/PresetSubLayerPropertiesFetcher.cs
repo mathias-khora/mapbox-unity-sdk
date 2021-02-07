@@ -43,6 +43,8 @@
 			//Modifiers
 			List<MeshModifier> meshModifiers = new List<MeshModifier>();
 			List<GameObjectModifier> gameObjectModifiers = new List<GameObjectModifier>();
+			var modifierStacks = new List<ModifierStack>();
+
 			ColliderType colliderType = ColliderType.None;
 
 			switch (type)
@@ -123,6 +125,7 @@
 			_properties.materialOptions.SetDefaultMaterialOptions();
 			_properties.buildingsWithUniqueIds = buildingsWithUniqueIds;
 			_properties.moveFeaturePositionTo = positionTargetType;
+			_properties.ModifierStacks = modifierStacks;
 			_properties.MeshModifiers = meshModifiers;
 			_properties.GoModifiers = gameObjectModifiers;
 			_properties.colliderOptions = new ColliderOptions
