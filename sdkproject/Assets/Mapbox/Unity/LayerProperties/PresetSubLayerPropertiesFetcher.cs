@@ -37,7 +37,7 @@
 			StyleTypes style = StyleTypes.Realistic;
 
 			//Misc options
-			bool buildingsWithUniqueIds = true;
+			bool buildingsWithUniqueIds = false;
 			PositionTargetType positionTargetType = PositionTargetType.TileCenter;
 
 			//Modifiers
