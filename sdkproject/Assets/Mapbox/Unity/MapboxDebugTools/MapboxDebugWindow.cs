@@ -606,6 +606,7 @@ public class UnityTilesTabDebugView
 public class DataFetcherTabDebugView
 {
 	private DebuggerDataFetcherWrapper _dataFetcher;
+	private bool _activeTilesFold = false;
 
 	public DataFetcherTabDebugView()
 	{
@@ -620,7 +621,16 @@ public class DataFetcherTabDebugView
 		var activeRequestsLimit = _dataFetcher.GetActiveRequestLimit();
 
 		GUILayout.Label ("Data Fetcher", EditorStyles.boldLabel);
-		GUILayout.Label (string.Format("{0} : {1}/{2}", "Active Request Count", activeRequests.Count.ToString(), activeRequestsLimit), EditorStyles.miniLabel);
+		//GUILayout.Label (string.Format("{0} : {1}/{2}", "Active Request Count", activeRequests.Count.ToString(), activeRequestsLimit), EditorStyles.miniLabel);
+		_activeTilesFold = EditorGUILayout.Foldout(_activeTilesFold, string.Format("Active Tiles ({0}/{1})", activeRequests.Count, activeRequestsLimit));
+		if (_activeTilesFold)
+		{
+			foreach (var request in activeRequests)
+			{
+				DrawTile(request.Value);
+			}
+		}
+
 		GUILayout.Label (string.Format("{0} : {1}", "Order Queue Size", order.Count.ToString()), EditorStyles.miniLabel);
 		GUILayout.Label (string.Format("{0} : {1}", "Item List Size", items.Count.ToString()), EditorStyles.miniLabel);
 		GUILayout.Label (string.Format("{0} : {1}", "Order - Item (Cancelled)", order.Count - items.Count), EditorStyles.miniLabel);
@@ -658,6 +668,15 @@ public class DataFetcherTabDebugView
 		foreach (var entry in tilesetDictionary)
 		{
 			GUILayout.Label (string.Format("{0} : {1}", entry.Key, entry.Value), EditorStyles.miniLabel);
+		}
+	}
+
+	private void DrawTile(Tile item)
+	{
+		if (item != null)
+		{
+			EditorGUILayout.LabelField(string.Format("Tile Id: {0}", item.Id), EditorStyles.label);
+			EditorGUILayout.LabelField(string.Format("Tileset {0}", item.TilesetId), EditorStyles.label);
 		}
 	}
 }
