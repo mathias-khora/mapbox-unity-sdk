@@ -22,7 +22,7 @@ namespace Mapbox.Unity
 	/// </summary>
 	public class MapboxAccess : IFileSource
 	{
-		public OfflineManager OfflineManager;
+		public TaskManager TaskManager;
 		public MapboxCacheManager CacheManager;
 
 		ITelemetryLibrary _telemetryLibrary;
@@ -68,6 +68,12 @@ namespace Mapbox.Unity
 
 		MapboxAccess()
 		{
+#if UNITY_EDITOR
+			TaskManager = new EditorTaskManager();
+#else
+			TaskManager = new TaskManager();
+#endif
+
 			LoadAccessToken();
 			if (null == _configuration || string.IsNullOrEmpty(_configuration.AccessToken))
 			{
@@ -155,10 +161,7 @@ namespace Mapbox.Unity
 #endif
 
 #if !UNITY_WEBGL
-
 			var sqliteCache = new SQLiteCache(_configuration.FileCacheSize);
-			OfflineManager = new OfflineManager(_configuration.AccessToken, _configuration.GetMapsSkuToken);
-			OfflineManager.SetOfflineCache(sqliteCache);
 
 	#if UNITY_EDITOR
 			var fileCache = new EditorFileCache(_fileSource);
