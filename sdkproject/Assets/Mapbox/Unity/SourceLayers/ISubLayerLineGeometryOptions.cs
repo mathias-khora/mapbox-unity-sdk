@@ -1,4 +1,5 @@
 ﻿using Mapbox.Unity.Map;
+using UnityEngine;
 
 namespace Mapbox.Unity.SourceLayers
 {
@@ -8,7 +9,7 @@ namespace Mapbox.Unity.SourceLayers
 		/// Sets the width of the mesh generated for line features.
 		/// </summary>
 		/// <param name="width">Width of the mesh generated for line features.</param>
-		void SetLineWidth(float width);
+		void SetLineWidth(AnimationCurve width);
 		void SetJoinType(LineJoinType join);
 		void SetCapType(LineCapType cap);
 	}

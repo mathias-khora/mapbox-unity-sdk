@@ -7,19 +7,12 @@ using Mapbox.Unity.MeshGeneration.Data;
 
 namespace Mapbox.Unity.MeshGeneration.Modifiers
 {
-	public interface IModifierCore
-	{
-		void Run(VectorFeatureUnity feature, MeshData md, float tileSize, float zoom);
-		void Run(VectorFeatureUnity feature, MeshData md, UnityTile tile = null);
-	}
-
-	public class LineMeshCore : IModifierCore
+	public class LineMeshCore
 	{
 		public float MiterLimit = 0.2f;
 		public float RoundLimit = 1.05f;
 		public JoinType JoinType = JoinType.Round;
 		public JoinType CapType = JoinType.Round;
-		public Vector3 PushUp = new Vector3(0, 1, 0);
 		public AnimationCurve WidthCurve;
 
 		private readonly float _cosHalfSharpCorner = Mathf.Cos(75f / 2f * (Mathf.PI / 180f));
@@ -46,6 +39,15 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 		public ModifierType Type
 		{
 			get { return ModifierType.Preprocess; }
+		}
+
+		public LineMeshCore(LineGeometryOptions options)
+		{
+			WidthCurve = options.Width;
+			MiterLimit = options.MiterLimit;
+			RoundLimit = options.RoundLimit;
+			JoinType = options.JoinType;
+			CapType = options.CapType;
 		}
 
 		public void Initialize()
@@ -409,7 +411,7 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 		{
 			var triIndexStart = md.Vertices.Count;
 			var extrude = normal * (lineTurnsLeft ? -1 : 1);
-			_vertexList.Add(vertexPosition + extrude * WidthCurve.Evaluate(zoom) + PushUp);
+			_vertexList.Add(vertexPosition + extrude * WidthCurve.Evaluate(zoom));
 			_normalList.Add(Constants.Math.Vector3Up);
 			_uvList.Add(new Vector2(1, dist));
 			_tangentList.Add(normal.Perpendicular() * -1);
@@ -452,7 +454,7 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 			}
 
 			var vert = vertexPosition + extrude * WidthCurve.Evaluate(zoom);
-			_vertexList.Add(vert + PushUp);
+			_vertexList.Add(vert);
 			_normalList.Add(Constants.Math.Vector3Up);
 			_uvList.Add(new Vector2(1, dist));
 			_tangentList.Add(normal.Perpendicular() * -1);
@@ -477,7 +479,7 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 				extrude -= normal.Perpendicular() * endRight;
 			}
 
-			_vertexList.Add(vertexPosition + extrude * WidthCurve.Evaluate(zoom) + PushUp);
+			_vertexList.Add(vertexPosition + extrude * WidthCurve.Evaluate(zoom));
 			_normalList.Add(Constants.Math.Vector3Up);
 			_uvList.Add(new Vector2(0, dist));
 			_tangentList.Add(normal.Perpendicular() * -1);
@@ -497,21 +499,8 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 		}
 	}
 
-	public interface ICoreWrapper
+	public class LineMeshProperties
 	{
-		IModifierCore GetAsycCore();
-	}
-	/// <summary>
-	/// Line Mesh Modifier creates line polygons from a list of vertices. It offsets the original vertices to both sides using Width parameter and triangulates them manually.
-	/// It also creates tiled UV mapping using the line length.
-	/// </summary>
-	[CreateAssetMenu(menuName = "Mapbox/Modifiers/Line Mesh For Polygons Modifier")]
-	public class LineMeshForPolygonsModifier : MeshModifier, ICoreWrapper
-	{
-		#region Line Parameters
-
-		//[SerializeField] private LineGeometryOptions _options;
-
 		[Tooltip("Width of the line feature.")]
 		public AnimationCurve WidthCurve;
 
@@ -528,50 +517,33 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 		public JoinType CapType = JoinType.Round;
 
 		public Vector3 PushUp = new Vector3(0, 1, 0);
+	}
+
+	/// <summary>
+	/// Line Mesh Modifier creates line polygons from a list of vertices. It offsets the original vertices to both sides using Width parameter and triangulates them manually.
+	/// It also creates tiled UV mapping using the line length.
+	/// </summary>
+	[CreateAssetMenu(menuName = "Mapbox/Modifiers/Line Mesh For Polygons Modifier")]
+	public class LineMeshForPolygonsModifier : MeshModifier
+	{
+		#region Line Parameters
+
+		public LineGeometryOptions _options;
+
 		#endregion
 
 		#region Constants
 
 		#endregion
 
-		#region Mesh Generation Fields
 
-		//triangle indices
-
-		private LineMeshCore _lineMeshCore;
-
-		#endregion
-
-		#region Modifier Overrides
-
-		public override ModifierType Type
-		{
-			get { return _lineMeshCore.Type; }
-		}
-
-		// public override void Run(VectorFeatureUnity feature, MeshData md, float tileSize = 100, float zoom = 10)
-		// {
-		// 	_lineMeshCore.Run(feature, md, tileSize, zoom);
-		// }
+		public LineMeshProperties _lineMeshProperties;
 
 		public override void Run(VectorFeatureUnity feature, MeshData md, UnityTile tile = null)
 		{
-			_lineMeshCore.Run(feature, md, tile);
-		}
-
-		#endregion
-
-		public IModifierCore GetAsycCore()
-		{
-			var core = new LineMeshCore();
-			core.WidthCurve = WidthCurve;
-			core.MiterLimit = MiterLimit;
-			core.RoundLimit = RoundLimit;
-			core.JoinType = JoinType;
-			core.CapType = CapType;
-			core.PushUp = PushUp;
+			var core = new LineMeshCore(_options);
 			core.Initialize();
-			return core;
+			core.Run(feature, md, tile);
 		}
 	}
 }
