@@ -333,8 +333,8 @@ namespace Mapbox.Editor
 
 			}
 
-			EditorGUILayout.Space();
-			ShowSepartor();
+			EditorGUILayout.Space(20);
+			//ShowSepartor();
 
 			_vectorLayerDrawer.DrawUI(layerProperty);
 
