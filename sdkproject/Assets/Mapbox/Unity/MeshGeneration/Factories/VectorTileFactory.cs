@@ -156,8 +156,8 @@ namespace Mapbox.Unity.MeshGeneration.Factories
 
 		private void OnFetcherDataRecieved(UnityTile tile, Mapbox.Map.VectorTile vectorTile)
 		{
-			tile.SetVectorData(TilesetId, vectorTile);
-			CreateMeshes(tile);
+			tile.SetVectorData(TilesetId, vectorTile, CreateMeshes);
+			//CreateMeshes(tile);
 			// if (tile != null)
 			// {
 			// 	_tilesWaitingResponse.Remove(tile);
@@ -187,18 +187,6 @@ namespace Mapbox.Unity.MeshGeneration.Factories
 				OnErrorOccurred(e);
 			}
 		}
-
-
-
-
-
-		//TODO Review things below, do we keep `update` stuff? do we keep api stuff?
-		//TODO things below might be broken, might be buggy, might be totally unused
-
-
-
-
-
 
 		public override void UpdateTileProperty(UnityTile tile, LayerUpdateArgs updateArgs)
 		{

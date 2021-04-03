@@ -50,11 +50,6 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 			Run(feature, md);
 		}
 
-		public void Run(VectorFeatureUnity feature, MeshData md, float tileSize, float zoom)
-		{
-
-		}
-
 		public void Run(VectorFeatureUnity feature, MeshData md, UnityTile tile = null)
 		{
 			_counter = 0;
